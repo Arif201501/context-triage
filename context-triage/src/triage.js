@@ -27,18 +27,68 @@ export function adfToText(node) {
   return '';
 }
 
-const DECISION_RE = /\b(decid|decision|agreed|agreement|concluded|resolved to|kesepakatan|diputuskan|disepakati)/i;
+// Fetch-depth caps (review feedback): keep the panel cheap and the context
+// fresh — never pull more than a handful of links or the last few comments.
+export const MAX_LINKED_ISSUES = 5;
+export const MAX_RECENT_COMMENTS = 10;
+export const STALE_DECISION_DAYS = 30;
 
-/** Pull decision-like comments out of the issue comment list (newest first). */
-export function extractDecisions(comments = []) {
+const DECISION_RE = /\b(decid|decision|agreed|agreement|concluded|resolved to|kita pakai|kita pilih|setuju|sepakat|dipilih|diputuskan|disepakati|kesepakatan|final)/i;
+
+/**
+ * Pull decision-like comments out of the issue comment list (input order
+ * preserved). Each entry carries a link to its source comment when an
+ * issueKey is given; without one, `url` is null (keeps the old
+ * extractDecisions(comments) call shape working).
+ */
+export function extractDecisions(comments = [], issueKey = null) {
   return comments
     .map((c) => ({
       author: c.author?.displayName || 'Unknown',
       created: c.created,
       text: adfToText(c.body).trim(),
+      source: 'comment',
+      commentId: c.id || null,
+      url: issueKey && c.id ? `/browse/${issueKey}?focusedCommentId=${c.id}` : null,
     }))
-    .filter((c) => c.text && DECISION_RE.test(c.text))
-    .slice(0, 3);
+    .filter((c) => c.text && DECISION_RE.test(c.text));
+}
+
+/**
+ * Build the Decision Ledger for an issue: decision-like comments from the
+ * last MAX_RECENT_COMMENTS comments, plus a changelog entry each time the
+ * status changed to Done. Entries are newest-first. `stale` is true when
+ * the most recent recorded decision is older than STALE_DECISION_DAYS.
+ */
+export function buildDecisionLedger(issue, issueKey = null, now = new Date()) {
+  const comments = (issue.fields?.comment?.comments || []).slice(-MAX_RECENT_COMMENTS);
+  const entries = extractDecisions(comments, issueKey);
+  for (const h of issue.changelog?.histories || []) {
+    for (const item of h.items || []) {
+      if (item.field === 'status' && (item.toString || '').toLowerCase() === 'done') {
+        entries.push({
+          author: h.author?.displayName || 'Unknown',
+          created: h.created,
+          text: `Status changed to Done (${item.fromString || '(none)'} → Done).`,
+          source: 'changelog',
+          commentId: null,
+          url: issueKey ? `/browse/${issueKey}` : null,
+        });
+      }
+    }
+  }
+  entries.sort((a, b) => new Date(b.created) - new Date(a.created));
+  let stale = false;
+  let staleWarning = null;
+  if (entries.length > 0) {
+    const latestMs = entries.reduce((max, e) => Math.max(max, new Date(e.created).getTime()), 0);
+    const ageDays = daysSince(new Date(latestMs).toISOString(), now);
+    if (ageDays > STALE_DECISION_DAYS) {
+      stale = true;
+      staleWarning = `Last recorded decision is ${Math.floor(ageDays)} days old (over ${STALE_DECISION_DAYS} days) — the context may be stale. Confirm the decision still stands before acting on it.`;
+    }
+  }
+  return { entries, stale, staleWarning, count: entries.length };
 }
 
 /** Summarise the most recent activity: comments + status changes. */
@@ -173,17 +223,117 @@ export async function suggestAssignees(jira, issue, links, limit = 3) {
   return scored.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
+/**
+ * Handoff Readiness Score (0–100): five components worth 20 points each,
+ * all computed from data already fetched — no extra API calls.
+ * Verdict: >=80 Ready, 50–79 Almost ready, <50 Not ready.
+ * Blocker Risk: High if a blocker is open, Medium if other linked work is
+ * open, Low otherwise.
+ */
+export function handoffReadiness(issue, links, decisions, now = new Date()) {
+  const breakdown = [];
+  let score = 0;
+
+  const hasOwner = !!issue.fields?.assignee;
+  breakdown.push({
+    label: 'Owner assigned',
+    points: hasOwner ? 20 : 0,
+    detail: hasOwner ? `Owner: ${issue.fields.assignee.displayName}` : 'No assignee yet',
+  });
+  if (hasOwner) score += 20;
+
+  const openBlockers = links.filter(
+    (l) => BLOCKER_LINK_TYPES.has((l.linkType || '').toLowerCase()) && l.statusCategory !== 'done',
+  );
+  const noBlockers = openBlockers.length === 0;
+  breakdown.push({
+    label: 'No open blockers',
+    points: noBlockers ? 20 : 0,
+    detail: noBlockers
+      ? 'No blocking issues open'
+      : `${openBlockers.length} blocker(s) still open: ${openBlockers.map((l) => l.key).join(', ')}`,
+  });
+  if (noBlockers) score += 20;
+
+  const updated = issue.fields?.updated;
+  const recent = !!updated && daysSince(updated, now) <= 7;
+  breakdown.push({
+    label: 'Recently active',
+    points: recent ? 20 : 0,
+    detail: updated
+      ? `Last updated ${Math.floor(daysSince(updated, now))} day(s) ago`
+      : 'No update date recorded',
+  });
+  if (recent) score += 20;
+
+  const decisionCount = Array.isArray(decisions) ? decisions.length : 0;
+  const hasDecisions = decisionCount > 0;
+  breakdown.push({
+    label: 'Decisions recorded',
+    points: hasDecisions ? 20 : 0,
+    detail: hasDecisions ? `${decisionCount} decision(s) recorded` : 'No decisions recorded yet',
+  });
+  if (hasDecisions) score += 20;
+
+  const openLinks = links.filter((l) => l.statusCategory !== 'done');
+  const linksResolved = openLinks.length === 0;
+  breakdown.push({
+    label: 'Linked work resolved',
+    points: linksResolved ? 20 : 0,
+    detail: linksResolved
+      ? 'All linked work is done (or nothing linked)'
+      : `${openLinks.length} linked issue(s) still open`,
+  });
+  if (linksResolved) score += 20;
+
+  const verdict = score >= 80 ? 'Ready' : score >= 50 ? 'Almost ready' : 'Not ready';
+  const blockerRisk = openBlockers.length > 0 ? 'High' : openLinks.length > 0 ? 'Medium' : 'Low';
+
+  return { score, verdict, blockerRisk, breakdown };
+}
+
+/**
+ * Draft a handoff comment as plain text (a suggestion only — the app is
+ * read-only and never posts comments). Includes key, summary, status,
+ * assignee, next step, recorded decisions, the suggested assignee, and the
+ * readiness score.
+ */
+export function draftHandoffComment(ctx) {
+  const decisions = ctx.decisionLedger?.entries || ctx.decisions || [];
+  const topAssignee = ctx.suggestedAssignees?.[0];
+  const lines = [
+    `Handoff for ${ctx.key} — ${ctx.summary}`,
+    `Status: ${ctx.status}${ctx.assignee ? ` · Assignee: ${ctx.assignee}` : ' · Unassigned'}`,
+    `Next step: ${ctx.nextStep?.text || '(none suggested)'}`,
+  ];
+  if (decisions.length > 0) {
+    lines.push(`Decisions: ${decisions.slice(0, 3).map((d) => `"${d.text}"`).join('; ')}`);
+  } else {
+    lines.push('Decisions: none recorded yet.');
+  }
+  if (topAssignee) {
+    lines.push(
+      `Suggested assignee: ${topAssignee.displayName}${topAssignee.reasons?.length ? ` (${topAssignee.reasons.join('; ')})` : ''}`,
+    );
+  }
+  if (ctx.handoffReadiness) {
+    lines.push(`Handoff readiness: ${ctx.handoffReadiness.score}/100 (${ctx.handoffReadiness.verdict}, blocker risk ${ctx.handoffReadiness.blockerRisk})`);
+  }
+  return lines.join('\n');
+}
+
 /** Build the whole triage context object for one issue. */
 export async function buildIssueContext(jira, issueKey) {
   const issue = await jira.getIssue(issueKey);
   const f = issue.fields || {};
-  const links = linkedIssues(issue);
-  const comments = f.comment?.comments || [];
+  const links = linkedIssues(issue).slice(0, MAX_LINKED_ISSUES);
   const activity = recentActivity(issue, 5);
-  const decisions = extractDecisions(comments);
+  const decisionLedger = buildDecisionLedger(issue, issueKey);
+  const decisions = decisionLedger.entries;
   const nextStep = suggestNextStep(issue, links);
   const assignees = await suggestAssignees(jira, issue, links, 3);
-  return {
+  const readiness = handoffReadiness(issue, links, decisionLedger.entries);
+  const ctx = {
     key: issue.key,
     summary: f.summary || '',
     status: f.status?.name || 'Unknown',
@@ -197,9 +347,14 @@ export async function buildIssueContext(jira, issueKey) {
     linkedIssues: links,
     recentActivity: activity,
     decisions,
+    decisionLedger,
     nextStep,
     suggestedAssignees: assignees,
+    handoffReadiness: readiness,
+    handoffDraft: '',
   };
+  ctx.handoffDraft = draftHandoffComment(ctx);
+  return ctx;
 }
 
 /** Issues in a project untouched for >= daysStale days and not done. */

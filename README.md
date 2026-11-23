@@ -6,9 +6,11 @@ Bonus prizes targeted: **Best Agents — Rovo/Assignable agents** and
 **Best app with Atlassian MCP**.
 
 - **Deadline:** 22 Dec 2026, 12:00 PT = **23 Dec 2026, 03:00 WIB**
-- **Status (23 Nov 2026):** app code complete and verified as far as possible
-  without an Atlassian login. Deploy + installation link still need browser
-  steps (see below). ~29 days left.
+- **Status (23 Nov 2026, 23:59 WIB):** app code complete and verified as
+  far as possible without an Atlassian login. Review round applied
+  (Decision Ledger, Handoff Readiness Score, handoff draft, fetch limits;
+  16/16 tests). Deploy + installation link still need browser steps
+  (see below). ~29 days left.
 - **Cost:** $0. No Forge LLM, no paid API anywhere. AI features use Rovo
   (free, included in the Forge/Rovo platform).
 
@@ -18,9 +20,20 @@ Bonus prizes targeted: **Best Agents — Rovo/Assignable agents** and
 issue, instead of making them hunt across tabs:
 
 1. **Issue panel (Jira)** — "Context Triage" panel on any issue showing:
-   - linked issues with status + assignee,
+   - linked issues with status + assignee (at most 5, to keep the panel
+     cheap),
    - recent activity (comments + status changes),
-   - decisions mentioned in comments (detected heuristically, no LLM),
+   - **Decision Ledger** — decisions from the last 10 comments (expanded
+     matcher, including Indonesian "kita pakai / disepakati / setuju") plus
+     a changelog entry each time the status changed to Done; every entry
+     links to its source comment, and a warning appears when the last
+     decision is over 30 days old,
+   - **Handoff Readiness Score (0–100)** — five components at 20 points
+     each (owner assigned, no open blockers, recently active, decisions
+     recorded, linked work resolved) with a verdict (Ready / Almost ready /
+     Not ready) and a Blocker Risk (High / Medium / Low),
+   - **a suggested handoff draft** (plain text to copy into a Jira comment
+     yourself — the app is read-only and never posts),
    - a suggested next step (blockers → missing owner → staleness → linked work),
    - a suggested assignee, ranked by recent participation, ownership of
      linked work, and current open workload — with reasons shown.
@@ -51,7 +64,7 @@ codegeist-2026/
 │   │   └── prompts/agent-prompt.md   # Rovo agent system prompt
 │   ├── static/                # panel + agent icons (SVG)
 │   ├── skills/triage-context/SKILL.md
-│   └── test/triage.test.js    # 10 unit tests, mock Jira client, no credentials
+│   └── test/triage.test.js    # 16 unit tests, mock Jira client, no credentials
 └── .gitignore
 ```
 
@@ -60,8 +73,11 @@ codegeist-2026/
 - [x] Forge CLI 16.0.0 installed (`npm install -g @forge/cli`).
 - [x] `npm install` resolves cleanly — @forge/api 8.5.1, @forge/react
       11.17.0, @forge/resolver 1.8.0, @forge/bridge 5.17.0 (550 packages).
-- [x] `npm test` — **10/10 unit tests pass** (decision extraction, next-step
-      rules, assignee ranking, full context assembly, stalled search).
+- [x] `npm test` — **16/16 unit tests pass** (decision extraction, Decision
+      Ledger with source links + changelog Done entries + stale warning,
+      Handoff Readiness Score, handoff draft, fetch limits — max 5 linked
+      issues, last 10 comments — next-step rules, assignee ranking, full
+      context assembly, stalled search).
 - [x] `node --check` clean on all backend sources; `src/index.js` imports
       and exposes all four handlers (`resolverHandler`, `getIssueContext`,
       `findStalledIssues`, `suggestAssignee`).
@@ -117,7 +133,9 @@ task). Each is free; none needs KYC.
 
 1. Open a Jira issue with a blocker link + an undecided comment thread.
 2. Click the Context Triage panel: linked issues, recent activity,
-   decisions, suggested next step ("Unblock …"), suggested assignee.
+   Decision Ledger (click a "View source" link to jump to the comment),
+   Handoff Readiness Score with verdict + blocker risk, suggested handoff
+   draft, suggested next step ("Unblock …"), suggested assignee.
 3. Rovo Chat → Triage Assistant: "What is the status of PROJ-123?" and
    "Which issues in PROJ have gone stale?" — show grounded answers.
 4. Rovo Studio: show the three Context Triage MCP tools.

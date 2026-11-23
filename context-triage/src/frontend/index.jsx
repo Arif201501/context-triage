@@ -59,6 +59,55 @@ function Activity({ events }) {
   );
 }
 
+function DecisionLedger({ ledger }) {
+  if (!ledger || !ledger.entries || ledger.entries.length === 0) {
+    return <Text>No decisions recorded yet.</Text>;
+  }
+  return (
+    <Stack space="space.100">
+      {ledger.stale && ledger.staleWarning && (
+        <SectionMessage title="Stale context" appearance="warning">
+          <Text>{ledger.staleWarning}</Text>
+        </SectionMessage>
+      )}
+      {ledger.entries.map((d, i) => (
+        <Text key={i}>
+          “{d.text}” — {d.author}, {new Date(d.created).toLocaleDateString()}
+          {d.source === 'changelog' ? ' (from changelog)' : ''}
+          {d.url ? (
+            <>
+              {' '}
+              <Link href={d.url}>View source</Link>
+            </>
+          ) : null}
+        </Text>
+      ))}
+    </Stack>
+  );
+}
+
+function HandoffReadiness({ readiness }) {
+  if (!readiness) return null;
+  const verdictTone =
+    readiness.verdict === 'Ready' ? 'success' : readiness.verdict === 'Almost ready' ? 'inprogress' : 'removed';
+  const riskTone =
+    readiness.blockerRisk === 'Low' ? 'success' : readiness.blockerRisk === 'Medium' ? 'inprogress' : 'removed';
+  return (
+    <Stack space="space.100">
+      <Text>
+        Score: <strong>{readiness.score}/100</strong>{' '}
+        <Lozenge appearance={verdictTone}>{readiness.verdict}</Lozenge>
+        {' '}Blocker risk: <Lozenge appearance={riskTone}>{readiness.blockerRisk}</Lozenge>
+      </Text>
+      {readiness.breakdown.map((b, i) => (
+        <Text key={i}>
+          {b.points > 0 ? '✓' : '○'} {b.label} — {b.points}/20 ({b.detail})
+        </Text>
+      ))}
+    </Stack>
+  );
+}
+
 function App() {
   const context = useProductContext();
   const issueKey = context?.platformContext?.issueKey;
@@ -111,17 +160,24 @@ function App() {
       <Heading as="h4">Recent activity</Heading>
       <Activity events={data.recentActivity} />
 
-      <Heading as="h4">Decisions mentioned</Heading>
-      {data.decisions.length === 0 ? (
-        <Text>No decisions found in comments yet.</Text>
-      ) : (
+      <Heading as="h4">Decision Ledger</Heading>
+      <DecisionLedger ledger={data.decisionLedger || { entries: data.decisions || [], stale: false, staleWarning: null }} />
+
+      <Heading as="h4">Handoff readiness</Heading>
+      <HandoffReadiness readiness={data.handoffReadiness} />
+
+      <Heading as="h4">Handoff draft</Heading>
+      {data.handoffDraft ? (
         <Stack space="space.100">
-          {data.decisions.map((d, i) => (
-            <Text key={i}>
-              “{d.text}” — {d.author}, {new Date(d.created).toLocaleDateString()}
-            </Text>
+          {data.handoffDraft.split('\n').map((line, i) => (
+            <Text key={i}>{line}</Text>
           ))}
+          <Text>
+            Suggested draft — copy it to post as a Jira comment yourself. This app is read-only and never posts comments.
+          </Text>
         </Stack>
+      ) : (
+        <Text>No handoff draft available.</Text>
       )}
 
       <Button

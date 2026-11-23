@@ -39,9 +39,13 @@ modules:
       actionVerb: GET
       description: |
         Returns the full triage context for one Jira issue: summary, status,
-        assignee, linked issues with their statuses, recent activity
-        (comments and status changes), decisions mentioned in comments, and
-        a suggested next step.
+        assignee, linked issues with their statuses (at most 5), recent
+        activity (comments and status changes), a Decision Ledger (decisions
+        from the last 10 comments and Done transitions, each linked to its
+        source, with a stale-context warning when the last decision is over
+        30 days old), a Handoff Readiness Score (0-100 with verdict and
+        blocker risk), a suggested handoff draft (text only, read-only),
+        and a suggested next step.
       inputs:
         issueKey:
           title: Issue key

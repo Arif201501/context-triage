@@ -12,7 +12,9 @@ stale, who should pick something up, or what was decided.
 ## Tools (exposed by the Context Triage Forge app via `rovo:mcp`)
 
 - `get-issue-context(issueKey)` — summary, status, assignee, linked issues,
-  recent activity, decisions from comments, suggested next step.
+  recent activity, decisions from comments, suggested next step. The result
+  also includes a Decision Ledger, a Handoff Readiness Score (0-100 with
+  verdict and blocker risk), and a suggested handoff draft (text only).
 - `find-stalled-issues(projectKey, daysStale?)` — issues not updated for at
   least N days (default 7), not done, oldest first.
 - `suggest-assignee(issueKey)` — ranked assignee suggestions with reasons.
@@ -25,6 +27,9 @@ stale, who should pick something up, or what was decided.
    for a project-wide question.
 3. Answer with the status first, then evidence: open blockers, latest
    activity date, decisions found. If a blocker is open, lead with it.
+   When handing an issue over, quote the readiness score and offer the
+   handoff draft; if `decisionLedger.stale` is true, warn that the recorded
+   decisions may be stale.
 4. For "who should do it" questions, call `suggest-assignee` and present
    the top suggestion with its reasons. Suggestions are advisory; never
    claim to have assigned anyone (all tools are read-only).

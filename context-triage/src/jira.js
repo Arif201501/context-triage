@@ -40,7 +40,7 @@ export function createJiraClient() {
 
     async getAssignableUsers(issueKey) {
       const res = await api.asUser().requestJira(
-        route`/rest/api/3/user/assignable/search?issueKey=${issueKey}&maxResults=20`,
+        route`/rest/api/3/user/assignable/search?issueKey=${issueKey}&maxResults=10`,
         { headers: { Accept: 'application/json' } },
       );
       const users = await check(res, 'assignable users');

@@ -21,9 +21,12 @@ Apps for Software Teams
 
 Context Triage puts the context developers actually need inside the Jira
 issue itself. Open any issue and the panel shows its linked work, recent
-activity, decisions made in comments, a suggested next step, and a suggested
-assignee — with the reasons behind every suggestion. A Rovo agent, Triage
-Assistant, answers work-status questions from the same live data
+activity, a Decision Ledger (decisions from comments and Done transitions,
+each linked to its source, with a stale-context warning), a Handoff
+Readiness Score (0–100 with verdict and blocker risk), a suggested handoff
+draft, a suggested next step, and a suggested assignee — with the reasons
+behind every suggestion. A Rovo agent, Triage Assistant, answers
+work-status questions from the same live data
 ("What is the status of PROJ-123?", "Which issues have gone stale?"), and
 the same capabilities are exposed as MCP tools for custom agents.
 
@@ -38,10 +41,20 @@ Context Triage removes that hunt.
 issue view. For the open issue it shows:
 
 - Linked issues with their status and assignee, so blockers are visible
-  at a glance.
+  at a glance (at most 5 linked issues are shown, to keep the panel cheap).
 - Recent activity — the latest comments and status changes.
-- Decisions mentioned in comments, so the "what did we agree?" question
-  has an answer without re-reading the thread.
+- **Decision Ledger** — decisions mentioned in comments (last 10 comments,
+  expanded matcher including Indonesian phrasing) plus a changelog entry
+  each time the status changed to Done, so the "what did we agree?"
+  question has an answer without re-reading the thread. Every entry links
+  to its source comment, and a warning appears when the last decision is
+  over 30 days old.
+- **Handoff Readiness Score (0–100)** — five transparent components
+  (owner assigned, no open blockers, recently active, decisions recorded,
+  linked work resolved) with a verdict (Ready / Almost ready / Not ready)
+  and a Blocker Risk, so a handover decision takes one glance.
+- **Handoff draft** — a suggested handoff comment as plain text, ready to
+  copy into Jira yourself. The app is read-only and never posts comments.
 - A suggested next step, chosen by transparent rules: unblock first, then
   assign an owner, then chase stale work, then follow up linked issues.
 - A suggested assignee, ranked by recent participation in the issue,
@@ -84,8 +97,11 @@ explained.
    a test issue, link another issue to it, and add a comment containing
    "We decided to …").
 3. Click the **Context Triage** panel button on the issue: linked issues,
-   recent activity, decisions, suggested next step, and suggested assignee
-   should appear.
+   recent activity, Decision Ledger (click a "View source" link to jump to
+   the comment), Handoff Readiness Score with verdict and blocker risk,
+   handoff draft, suggested next step, and suggested assignee should
+   appear. If the last recorded decision is over 30 days old, a
+   "Stale context" warning is shown.
 4. In Rovo Chat, open **Triage Assistant** and ask:
    "What is the status of <ISSUE-KEY>?" and
    "Which issues in <PROJECT-KEY> have gone stale?"
