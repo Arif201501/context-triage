@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "@forge/api": "^8.4.0",
+    "@forge/bridge": "^5.5.0",
+    "@forge/react": "^11.6.0",
+    "@forge/resolver": "^1.6.0"
+  },
+  "description": "Context Triage — a Forge app for Jira that shows linked issues, recent activity, decisions, a suggested next step and a suggested assignee, plus a Rovo agent and MCP tools. Built for Codegeist 2026.",
+  "license": "MIT",
+  "main": "src/index.js",
+  "name": "context-triage",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/triage.test.js"
+  },
+  "version": "0.1.0",
+  "type": "module",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

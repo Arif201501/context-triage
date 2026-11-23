@@ -1,0 +1,119 @@
+# Context Triage — Forge app for Jira (Codegeist 2026)
+#
+# IMPORTANT: app.id below is a PLACEHOLDER. It is replaced automatically the
+# first time the app is registered with `forge register` / `forge create`
+# (a step that requires browser login — see ../../README.md, section
+# "Langkah yang butuh browser"). Do NOT invent or reuse another app's id.
+# The placeholder is a syntactically valid UUID so `forge lint` can run
+# offline; it must be replaced before `forge deploy`.
+modules:
+  jira:issuePanel:
+    - key: context-triage-panel
+      resource: main
+      resolver:
+        function: resolver
+      render: native
+      title: Context Triage
+      icon: resource:static;triage-icon.svg
+
+  rovo:agent:
+    - key: triage-assistant
+      name: Triage Assistant
+      description: Answers work-status questions for Jira issues — linked work, recent activity, decisions, and who should pick it up next.
+      icon: resource:static;agent-icon.svg
+      prompt: resource:agent-prompt;agent-prompt.md
+      conversationStarters:
+        - What is the status of this issue?
+        - Which linked issues are still open?
+        - Who should work on this issue next?
+        - Which issues in this project have gone stale?
+      actions:
+        - get-issue-context
+        - find-stalled-issues
+        - suggest-assignee
+
+  action:
+    - key: get-issue-context
+      name: Get issue context
+      function: getIssueContext
+      actionVerb: GET
+      description: |
+        Returns the full triage context for one Jira issue: summary, status,
+        assignee, linked issues with their statuses, recent activity
+        (comments and status changes), decisions mentioned in comments, and
+        a suggested next step.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The Jira issue key, for example PROJ-123.
+    - key: find-stalled-issues
+      name: Find stalled issues
+      function: findStalledIssues
+      actionVerb: GET
+      description: |
+        Lists issues in a project that have not been updated for at least the
+        given number of days and are not in a done status, oldest first.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: true
+          description: The Jira project key, for example PROJ.
+        daysStale:
+          title: Days without an update
+          type: number
+          required: false
+          description: Minimum days since the last update. Defaults to 7.
+    - key: suggest-assignee
+      name: Suggest assignee
+      function: suggestAssignee
+      actionVerb: GET
+      description: |
+        Suggests who should work on an issue next, ranked by recent
+        participation in the issue, ownership of linked work, and current
+        open workload. Read-only; it never assigns anyone by itself.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The Jira issue key, for example PROJ-123.
+
+  rovo:mcp:
+    - key: context-triage-mcp
+      name: Context Triage MCP
+      tools:
+        - get-issue-context
+        - find-stalled-issues
+        - suggest-assignee
+
+  function:
+    - key: resolver
+      handler: index.resolverHandler
+    - key: getIssueContext
+      handler: index.getIssueContext
+    - key: findStalledIssues
+      handler: index.findStalledIssues
+    - key: suggestAssignee
+      handler: index.suggestAssignee
+
+resources:
+  - key: main
+    path: src/frontend/index.jsx
+  - key: agent-prompt
+    path: src/prompts
+  - key: static
+    path: static
+
+permissions:
+  scopes:
+    - read:jira-work
+    - read:jira-user
+    - search:jira
+
+app:
+  runtime:
+    name: nodejs24.x
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
