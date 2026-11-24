@@ -19,7 +19,8 @@ modules:
   rovo:agent:
     - key: triage-assistant
       name: Triage Assistant
-      description: Answers work-status questions for Jira issues — linked work, recent activity, decisions, and who should pick it up next.
+      description: Answers work-status questions for Jira issues — linked work, recent
+        activity, decisions, and who should pick it up next.
       icon: resource:static;agent-icon.svg
       prompt: resource:agent-prompt;agent-prompt.md
       conversationStarters:
@@ -37,15 +38,7 @@ modules:
       name: Get issue context
       function: getIssueContext
       actionVerb: GET
-      description: |
-        Returns the full triage context for one Jira issue: summary, status,
-        assignee, linked issues with their statuses (at most 5), recent
-        activity (comments and status changes), a Decision Ledger (decisions
-        from the last 10 comments and Done transitions, each linked to its
-        source, with a stale-context warning when the last decision is over
-        30 days old), a Handoff Readiness Score (0-100 with verdict and
-        blocker risk), a suggested handoff draft (text only, read-only),
-        and a suggested next step.
+      description: "Full triage context for one Jira issue: summary, status, assignee, linked issues (max 5) with statuses, recent activity, Decision Ledger from recent comments and Done transitions, Handoff Readiness Score (0-100), handoff draft, and next step."
       inputs:
         issueKey:
           title: Issue key
@@ -115,9 +108,8 @@ permissions:
   scopes:
     - read:jira-work
     - read:jira-user
-    - search:jira
 
 app:
   runtime:
     name: nodejs24.x
-  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
+  id: ari:cloud:ecosystem::app/c56add27-5527-4f0b-882a-01b86c199e1a

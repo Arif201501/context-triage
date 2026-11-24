@@ -9,6 +9,7 @@ import ForgeReconciler, {
   Box,
   Button,
   Heading,
+  Inline,
   Link,
   Lozenge,
   SectionMessage,
@@ -94,11 +95,15 @@ function HandoffReadiness({ readiness }) {
     readiness.blockerRisk === 'Low' ? 'success' : readiness.blockerRisk === 'Medium' ? 'inprogress' : 'removed';
   return (
     <Stack space="space.100">
-      <Text>
-        Score: <strong>{readiness.score}/100</strong>{' '}
+      {/* UI Kit 2 has no <strong> component — bold text is a sibling
+          <Text weight="bold"> inside an <Inline> row. */}
+      <Inline space="space.100" alignBlock="center" shouldWrap>
+        <Text>Score:</Text>
+        <Text weight="bold">{readiness.score}/100</Text>
         <Lozenge appearance={verdictTone}>{readiness.verdict}</Lozenge>
-        {' '}Blocker risk: <Lozenge appearance={riskTone}>{readiness.blockerRisk}</Lozenge>
-      </Text>
+        <Text>Blocker risk:</Text>
+        <Lozenge appearance={riskTone}>{readiness.blockerRisk}</Lozenge>
+      </Inline>
       {readiness.breakdown.map((b, i) => (
         <Text key={i}>
           {b.points > 0 ? '✓' : '○'} {b.label} — {b.points}/20 ({b.detail})
@@ -110,7 +115,10 @@ function HandoffReadiness({ readiness }) {
 
 function App() {
   const context = useProductContext();
-  const issueKey = context?.platformContext?.issueKey;
+  // UI Kit 2: the issue the panel is opened on lives at
+  // context.extension.issue.key (NOT platformContext.issueKey, which is
+  // the UI Kit 1 shape and is always undefined here).
+  const issueKey = context?.extension?.issue?.key;
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -121,6 +129,7 @@ function App() {
       .catch((e) => setError(e?.message || String(e)));
   }, [issueKey]);
 
+  if (!context) return <Spinner size="medium" label="Loading triage context" />;
   if (!issueKey) return <Text>Open this panel on a Jira issue to see its context.</Text>;
   if (error) {
     return (
@@ -148,10 +157,11 @@ function App() {
       </SectionMessage>
 
       {topAssignee && (
-        <Text>
-          Suggested assignee: <strong>{topAssignee.displayName}</strong>
-          {topAssignee.reasons.length > 0 ? ` — ${topAssignee.reasons.join('; ')}` : ''}
-        </Text>
+        <Inline space="space.100" alignBlock="center" shouldWrap>
+          <Text>Suggested assignee:</Text>
+          <Text weight="bold">{topAssignee.displayName}</Text>
+          {topAssignee.reasons.length > 0 ? <Text>— {topAssignee.reasons.join('; ')}</Text> : null}
+        </Inline>
       )}
 
       <Heading as="h4">Linked issues ({data.linkedIssues.length})</Heading>

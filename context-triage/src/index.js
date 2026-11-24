@@ -8,8 +8,10 @@ import { createJiraClient } from './jira.js';
 import { buildIssueContext, findStalled, suggestAssignees, linkedIssues } from './triage.js';
 
 export const resolverHandler = makeResolver({
-  getContext: async ({ payload }) => {
-    const issueKey = payload?.issueKey;
+  getContext: async ({ payload, context }) => {
+    // Prefer the explicit payload, fall back to the issue the panel was
+    // opened on (resolver invocation context, UI Kit 2 shape).
+    const issueKey = payload?.issueKey || context?.extension?.issue?.key;
     if (!issueKey || typeof issueKey !== 'string') {
       throw new Error('getContext requires an issueKey string.');
     }
