@@ -6,11 +6,13 @@ Bonus prizes targeted: **Best Agents — Rovo/Assignable agents** and
 **Best app with Atlassian MCP**.
 
 - **Deadline:** 22 Dec 2026, 12:00 PT = **23 Dec 2026, 03:00 WIB**
-- **Status (23 Nov 2026, 23:59 WIB):** app code complete and verified as
-  far as possible without an Atlassian login. Review round applied
-  (Decision Ledger, Handoff Readiness Score, handoff draft, fetch limits;
-  16/16 tests). Deploy + installation link still need browser steps
-  (see below). ~29 days left.
+- **Status (27 Nov 2026, review):** app code complete, tests 16/16,
+  **deployed + installed 24 Nov 2026** (Forge v2.0.0, development,
+  status Up-to-date on https://context-triage-dev.atlassian.net/).
+  Still open: upload demo video to YouTube + fill its URL in
+  SUBMISSION.md, create the public "share app" installation link,
+  visual check of the panel/Rovo agent in a browser, Devpost Join +
+  submit. ~26 days left.
 - **Cost:** $0. No Forge LLM, no paid API anywhere. AI features use Rovo
   (free, included in the Forge/Rovo platform).
 
@@ -54,7 +56,8 @@ codegeist-2026/
 ├── context-triage/            # the Forge app
 │   ├── manifest.yml           # modules: jira:issuePanel, rovo:agent, action x3,
 │   │                          #   rovo:mcp, function x4; scopes: read:jira-work,
-│   │                          #   read:jira-user, search:jira; runtime nodejs24.x
+│   │                          #   read:jira-user; runtime nodejs24.x; app id real
+│   │                          #   (registered 24 Nov 2026, see manifest.yml)
 │   ├── package.json
 │   ├── src/
 │   │   ├── index.js           # Forge function handlers (thin wrappers)
@@ -88,12 +91,21 @@ codegeist-2026/
 - [x] `forge lint` parsed the manifest locally and caught one real bug
       (prompt resource must point at a directory) — fixed.
 - [x] Rules re-checked against https://codegeist2026.devpost.com/rules on
-      23 Nov 2026: Forge + ≥1 Atlassian product, new project, installation
-      link required, demo video <5 min on YouTube, description + tech
-      explanation required. Indonesia is not on the excluded list.
-- [ ] **NOT yet verified (needs browser/login):** `forge deploy`, install on
-      a dev Jira site, panel rendering in a real issue, Rovo agent answers,
-      MCP tools in Rovo Studio, installation link. See next section.
+      23 Nov 2026 and again 27 Nov 2026: Forge + ≥1 Atlassian product,
+      new project, installation link required ("Start sharing your app"),
+      demo video <5 min on YouTube (public), description + tech
+      explanation required. Indonesia is not on the excluded list
+      (Brazil, Quebec, Russia, Belarus, Crimea, Cuba, Iran, North Korea,
+      Syria, Sudan, Myanmar + OFAC). Judging: Technological
+      Implementation 20%, Design 20%, Presentation 20%.
+- [x] `forge deploy` + `forge install` — **done 24 Nov 2026** (see
+      `forge-deploy-report-2026-11-24.md`): v2.0.0 to development,
+      installed on https://context-triage-dev.atlassian.net/, status
+      Up-to-date. Two manifest fixes on the way: invalid scope
+      `search:jira` removed, one action description shortened <255 chars.
+- [ ] **NOT yet verified (needs browser/login):** panel rendering in a
+      real issue, Rovo agent answers, MCP tools in Rovo Studio,
+      public "share app" installation link. See next section.
 
 ## Steps that need a browser (for parent — DO NOT skip)
 
@@ -106,10 +118,11 @@ task). Each is free; none needs KYC.
 2. **`forge login`** — in a browser-capable session, run `forge login` and
    complete Atlassian auth (or set `FORGE_EMAIL` + `FORGE_API_TOKEN` from an
    Atlassian API token).
-3. **Register the app + replace the placeholder id** — run
-   `forge register` (or `forge create` flow) inside `context-triage/`; it
-   writes the real `app.id` into `manifest.yml`, replacing the placeholder
-   `ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000`.
+3. **Register the app + replace the placeholder id** — DONE 24 Nov
+   2026 (`forge register`; real app id now in `manifest.yml`:
+   `ari:cloud:ecosystem::app/c56add27-5527-4f0b-882a-01b86c199e1a`).
+   For a fresh clone: run `forge register` inside `context-triage/`;
+   it writes the real `app.id` into `manifest.yml`.
    Then `forge deploy` and `forge install --site <your-dev-site>`.
    Note: `forge create` non-interactive also demands a Developer Space id
    (`forge developer-spaces list`), which itself needs login — that is why

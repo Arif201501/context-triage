@@ -110,8 +110,12 @@ explained.
 6. No configuration is needed and no account beyond your Atlassian site is
    required. Everything is read-only.
 
-## Links (TODO — fill in after browser steps)
+## Links
 
-- Installation link: _TODO — generate via `forge install` / app sharing_
-- Demo video (<5 min, YouTube): _TODO — record after deploy, separate step_
-- Source code: this repository
+- **Installation / Jira site (app installed here, dev env, v2.0.0, status Up-to-date):** https://context-triage-dev.atlassian.net/
+- **Developer console overview (app id `ari:cloud:ecosystem::app/c56add27-5527-4f0b-882a-01b86c199e1a`):** https://developer.atlassian.com/console/myapps/c56add27-5527-4f0b-882a-01b86c199e1a/overview
+- **Installations in the console:** https://developer.atlassian.com/console/myapps/c56add27-5527-4f0b-882a-01b86c199e1a/monitoring/installations
+- **Demo video (<5 min, YouTube):** _TODO — upload `demo-video/context-triage-demo.mp4` (57 detik, 1920×1080, sudah ada di disk) ke YouTube, lalu isi URL-nya di sini_
+- **Source code:** https://github.com/Arif201501/context-triage
+
+> Catatan: Forge tidak punya URL instalasi publik terpisah — aplikasi muncul di dalam Jira (panel issue + agen Rovo). Kalau Devpost meminta "installation link", pakai URL situs Jira di atas; link "share app" dari developer console (https://developer.atlassian.com/platform/forge/distribute-your-apps/#start-sharing-your-app) masih harus dibuat lewat browser bila diperlukan. Verifikasi visual panel di Jira juga masih butuh langkah browser.

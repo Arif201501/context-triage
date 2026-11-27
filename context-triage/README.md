@@ -12,7 +12,7 @@ Atlassian Cloud Developer site, and `forge login`.
 ```bash
 cd context-triage
 npm install
-forge register        # replaces the placeholder app.id in manifest.yml
+forge register        # already done 24 Nov 2026; re-run only for a fresh clone
 forge deploy
 forge install --site <your-dev-site>.atlassian.net
 ```
@@ -36,7 +36,7 @@ VMs), use a separate config home: `export XDG_CONFIG_HOME=/tmp/forge-config`.
 ## Develop / test
 
 ```bash
-npm test          # 10 unit tests, mock Jira client, no credentials needed
+npm test          # 16 unit tests, mock Jira client, no credentials needed
 ```
 
 Backend logic lives in `src/triage.js` (pure functions, no Forge imports).
@@ -54,4 +54,6 @@ user). No paid APIs, no Forge LLM, no secrets in the repo.
 | `action` | `suggest-assignee` | Ranked assignee suggestions (GET) |
 | `rovo:mcp` | `context-triage-mcp` | Exposes the 3 actions as MCP tools |
 
-Scopes: `read:jira-work`, `read:jira-user`, `search:jira` (read-only).
+Scopes: `read:jira-work`, `read:jira-user` (read-only). Note: `search:jira`
+is NOT a valid Forge scope — it was removed from the manifest on 24 Nov
+2026 after `forge lint` rejected it.

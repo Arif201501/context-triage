@@ -1,11 +1,11 @@
 # Context Triage — Forge app for Jira (Codegeist 2026)
 #
-# IMPORTANT: app.id below is a PLACEHOLDER. It is replaced automatically the
-# first time the app is registered with `forge register` / `forge create`
-# (a step that requires browser login — see ../../README.md, section
-# "Langkah yang butuh browser"). Do NOT invent or reuse another app's id.
-# The placeholder is a syntactically valid UUID so `forge lint` can run
-# offline; it must be replaced before `forge deploy`.
+# app.id below is the REAL id, registered with `forge register` on
+# 2026-11-24 (app "Context Triage", Developer Space context-triage-dev).
+# Do NOT replace it with a placeholder or reuse another app's id.
+# (The old placeholder warning was removed 2026-11-27: the id is real
+# and the app is already deployed v2.0.0 + installed — see
+# ../forge-deploy-report-2026-11-24.md.)
 modules:
   jira:issuePanel:
     - key: context-triage-panel

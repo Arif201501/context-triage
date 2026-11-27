@@ -2,3 +2,6 @@ node_modules/
 .forge/
 *.log
 .DS_Store
+
+# Demo video build intermediates (clips, mixes, silent master) — not deliverables
+demo-video/work/
